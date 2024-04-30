@@ -14,6 +14,8 @@ public class UDPReceiver : MonoBehaviour
     public float yaw;
     [HideInInspector]
     public float roll;
+    [HideInInspector]
+    public bool clutch;
 
     void Start()
     {
@@ -45,6 +47,7 @@ public class UDPReceiver : MonoBehaviour
             pitch = float.Parse(values[0]);
             yaw = -float.Parse(values[1]);
             roll = float.Parse(values[2]);
+            clutch = bool.Parse(values[3]);
         }
         catch (Exception e)
         {
