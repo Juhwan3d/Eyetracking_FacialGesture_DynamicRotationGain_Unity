@@ -38,7 +38,7 @@ public class PlayerCameraController : MonoBehaviour
             pitch = 0;
 
         // 기준 로테이션에 대한 보정된 회전값을 계산
-        Vector3 targetRotationVec = new Vector3(pitch, (yaw + forward)%360 * rotationGain, 0);
+        Vector3 targetRotationVec = new Vector3(pitch, yaw * rotationGain + forward, 0);
         Quaternion targetRotation = Quaternion.Euler(targetRotationVec);
 
         // 부드럽게 회전하거나 바로 회전할지 여부에 따라 회전 적용
