@@ -354,6 +354,7 @@
 -analyzer:"C:/Program Files/2022.3.25f1/Editor/Data/Tools/Unity.SourceGenerators/Unity.SourceGenerators.dll"
 "Assets/Scripts/PlayerCameraController.cs"
 "Assets/Scripts/UDPReceiver.cs"
+"Assets/Scripts/UIController.cs"
 -langversion:9.0
 /deterministic
 /optimize+

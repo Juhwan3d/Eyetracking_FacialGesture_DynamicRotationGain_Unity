@@ -5,7 +5,6 @@ public class PlayerCameraController : MonoBehaviour
     public UDPReceiver UDPReceiver;
     public float rotationSpeedFactor = 5f;
     public float rotationGain = 3f;
-    public bool smoothRotate = true;
     public bool usePitch = true;
 
     private float pitch;
@@ -13,10 +12,9 @@ public class PlayerCameraController : MonoBehaviour
     private float roll;
     private bool clutch = false;
 
-    [SerializeField]
-    private Quaternion targetRotation;
-    [SerializeField]
-    private float forward = 0f;
+    [SerializeField] private Quaternion targetRotation;
+    [SerializeField] private float forward = 0f;
+    [SerializeField] private Quaternion smoothedRotation;
 
     // Update is called once per frame
     void Update()
@@ -37,14 +35,12 @@ public class PlayerCameraController : MonoBehaviour
         if (!usePitch)
             pitch = 0;
 
-        // 기준 로테이션에 대한 보정된 회전값을 계산
+        // 이동 평균된 회전값 사용
         Vector3 targetRotationVec = new Vector3(pitch, yaw * rotationGain + forward, 0);
-        Quaternion targetRotation = Quaternion.Euler(targetRotationVec);
+        targetRotation = Quaternion.Euler(targetRotationVec);
 
-        // 부드럽게 회전하거나 바로 회전할지 여부에 따라 회전 적용
-        if (smoothRotate)
-            transform.localRotation = Quaternion.Lerp(transform.localRotation, targetRotation, rotationSpeedFactor * Time.deltaTime);
-        else
-            transform.localRotation = targetRotation;
+        // 부드러운 회전을 위해 이전 회전값과 현재 회전값 사이를 보간
+        smoothedRotation = Quaternion.Lerp(smoothedRotation, targetRotation, Time.deltaTime * rotationSpeedFactor);
+        transform.localRotation = smoothedRotation;
     }
 }
