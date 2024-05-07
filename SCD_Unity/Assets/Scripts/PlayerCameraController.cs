@@ -3,9 +3,10 @@ using UnityEngine;
 public class PlayerCameraController : MonoBehaviour
 {
     public UDPReceiver UDPReceiver;
-    public float rotationSpeedFactor = 5f;
+    public float rotationSpeedFactor = 10f;
     public float rotationGain = 3f;
     public bool usePitch = true;
+    public bool LerpRotate = true;
 
     private float pitch;
     private float yaw;
@@ -40,7 +41,15 @@ public class PlayerCameraController : MonoBehaviour
         targetRotation = Quaternion.Euler(targetRotationVec);
 
         // 부드러운 회전을 위해 이전 회전값과 현재 회전값 사이를 보간
-        smoothedRotation = Quaternion.Lerp(smoothedRotation, targetRotation, Time.deltaTime * rotationSpeedFactor);
+        
+        if (LerpRotate)
+            smoothedRotation = Quaternion.Lerp(smoothedRotation, targetRotation, Time.deltaTime * rotationSpeedFactor);
+        else
+        {
+            rotationSpeedFactor = 20f;
+            smoothedRotation = Quaternion.RotateTowards(smoothedRotation, targetRotation, Time.deltaTime * rotationSpeedFactor);
+        }
+        
         transform.localRotation = smoothedRotation;
     }
 }
