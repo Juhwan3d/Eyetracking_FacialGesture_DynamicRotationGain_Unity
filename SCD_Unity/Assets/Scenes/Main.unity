@@ -667,8 +667,6 @@ MonoBehaviour:
   yaw: 0
   roll: 0
   clutch: 0
-  averageCount: 30
-  queueReset: 0
 --- !u!1 &1846068231
 GameObject:
   m_ObjectHideFlags: 0
@@ -801,13 +799,13 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2917555318941497368, guid: f675ec700e3cd0a47944707dc591b508, type: 3}
+      propertyPath: LerpRotate
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2917555318941497368, guid: f675ec700e3cd0a47944707dc591b508, type: 3}
       propertyPath: UDPReceiver
       value: 
       objectReference: {fileID: 1254014291}
-    - target: {fileID: 2917555318941497368, guid: f675ec700e3cd0a47944707dc591b508, type: 3}
-      propertyPath: smoothRotate
-      value: 1
-      objectReference: {fileID: 0}
     - target: {fileID: 3091056608106323145, guid: f675ec700e3cd0a47944707dc591b508, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -851,26 +849,6 @@ PrefabInstance:
     - target: {fileID: 6264303491294999211, guid: f675ec700e3cd0a47944707dc591b508, type: 3}
       propertyPath: m_Name
       value: Main Player
-      objectReference: {fileID: 0}
-    - target: {fileID: 8810732106059000361, guid: f675ec700e3cd0a47944707dc591b508, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 8810732106059000361, guid: f675ec700e3cd0a47944707dc591b508, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8810732106059000361, guid: f675ec700e3cd0a47944707dc591b508, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8810732106059000361, guid: f675ec700e3cd0a47944707dc591b508, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8810732106059000361, guid: f675ec700e3cd0a47944707dc591b508, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

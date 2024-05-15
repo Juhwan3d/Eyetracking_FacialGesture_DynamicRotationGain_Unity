@@ -14,10 +14,6 @@ public class UDPReceiver : MonoBehaviour
     [HideInInspector] public float roll;
     [HideInInspector] public bool clutch;
 
-    public int averageCount = 30;
-    public bool queueReset = false;
-    public Queue<Vector3> rotationQueue = new Queue<Vector3>();
-
     void Start()
     {
         try
@@ -41,7 +37,7 @@ public class UDPReceiver : MonoBehaviour
             receivedBytes = udpClient.EndReceive(result, ref remoteEndPoint);
             string receivedString = System.Text.Encoding.UTF8.GetString(receivedBytes);
 
-            Debug.Log("Received data: " + receivedString);
+            // Debug.Log("Received data: " + receivedString);
 
             // Parsing
             string[] values = receivedString.Split(',');
@@ -49,17 +45,6 @@ public class UDPReceiver : MonoBehaviour
             yaw = -float.Parse(values[1]);
             roll = float.Parse(values[2]);
             clutch = bool.Parse(values[3]);
-
-            rotationQueue.Enqueue(new Vector3(pitch, yaw, roll));
-            if (queueReset)
-            {
-                rotationQueue.Clear();
-                queueReset = false;
-            }
-            if (rotationQueue.Count >= averageCount)
-            {
-                CalcMovingAverage();
-            }
         }
         catch (Exception e)
         {
@@ -71,21 +56,5 @@ public class UDPReceiver : MonoBehaviour
             if (udpClient != null)
                 udpClient.BeginReceive(ReceiveData, null);
         }
-    }
-
-    private void CalcMovingAverage()
-    {
-        Vector3 averageRotation = Vector3.zero;
-        foreach (Vector3 rotation in rotationQueue)
-        {
-            averageRotation += rotation;
-        }
-        averageRotation /= rotationQueue.Count;
-
-        pitch = averageRotation.x;
-        yaw = averageRotation.y;
-        roll = averageRotation.z;
-
-        rotationQueue.Dequeue();
     }
 }

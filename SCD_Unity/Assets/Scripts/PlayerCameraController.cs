@@ -14,6 +14,7 @@ public class PlayerCameraController : MonoBehaviour
     private bool clutch = false;
 
     [SerializeField] private Quaternion targetRotation;
+    [SerializeField] private Vector3 targetRotationVec;
     [SerializeField] private float forward = 0f;
     [SerializeField] private Quaternion smoothedRotation;
 
@@ -36,20 +37,48 @@ public class PlayerCameraController : MonoBehaviour
         if (!usePitch)
             pitch = 0;
 
-        // 이동 평균된 회전값 사용
-        Vector3 targetRotationVec = new Vector3(pitch, yaw * rotationGain + forward, 0);
+        targetRotationVec = new Vector3(pitch, yaw * rotationGain + forward, 0);
         targetRotation = Quaternion.Euler(targetRotationVec);
 
-        // 부드러운 회전을 위해 이전 회전값과 현재 회전값 사이를 보간
-        
         if (LerpRotate)
+        {
             smoothedRotation = Quaternion.Lerp(smoothedRotation, targetRotation, Time.deltaTime * rotationSpeedFactor);
+            transform.localRotation = smoothedRotation;
+        }
         else
         {
-            rotationSpeedFactor = 20f;
-            smoothedRotation = Quaternion.RotateTowards(smoothedRotation, targetRotation, Time.deltaTime * rotationSpeedFactor);
+            transform.localRotation = targetRotation;
         }
-        
-        transform.localRotation = smoothedRotation;
+/*        else
+        {
+            smoothedRotation = Quaternion.RotateTowards(smoothedRotation, targetRotation, Time.deltaTime * rotationSpeedFactor);
+            transform.localRotation = smoothedRotation;
+        }*/
+    }
+
+    // 시각적으로 smoothedRotation을 표시하는 함수
+    private void OnDrawGizmos()
+    {
+        Gizmos.color = Color.blue;
+        Gizmos.DrawLine(transform.position, transform.position + transform.forward * 2f);
+        Gizmos.color = Color.green;
+        Gizmos.DrawLine(transform.position, transform.position + transform.up * 2f);
+        Gizmos.color = Color.red;
+        Gizmos.DrawLine(transform.position, transform.position + transform.right * 2f);
+
+        // smoothedRotation 시각적으로 표시
+        DrawQuaternion(transform.position, smoothedRotation.normalized, 1f);
+    }
+
+    // Quaternion을 시각적으로 표시하는 함수
+    void DrawQuaternion(Vector3 position, Quaternion rotation, float size)
+    {
+        // Quaternion을 행렬로 변환
+        Matrix4x4 matrix = Matrix4x4.TRS(position, rotation, Vector3.one);
+
+        // Quaternion을 시각적으로 표시
+        Gizmos.matrix = matrix;
+        Gizmos.color = Color.red;
+        Gizmos.DrawWireCube(Vector3.zero, new Vector3(size, size, size));
     }
 }
