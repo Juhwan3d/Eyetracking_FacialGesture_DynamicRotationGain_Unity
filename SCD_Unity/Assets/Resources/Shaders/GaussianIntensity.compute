@@ -1,0 +1,16 @@
+#pragma kernel CSMain
+
+RWTexture2D<float4> Result;
+int img_w, img_h;
+float sigma;
+float2 center; // Gaussian center coordinates
+
+[numthreads(16, 16, 1)]
+void CSMain(uint3 id : SV_DispatchThreadID)
+{
+    int2 img_dim = int2(img_w, img_h);
+    float2 uv = float2(id.xy) / float2(img_dim);
+    float2 r = (uv - center) * float2(img_w, img_h);
+    float heat = exp(-dot(r, r) / (2.0 * sigma * sigma));
+    Result[id.xy] = float4(heat, 0, 0, 0);
+}

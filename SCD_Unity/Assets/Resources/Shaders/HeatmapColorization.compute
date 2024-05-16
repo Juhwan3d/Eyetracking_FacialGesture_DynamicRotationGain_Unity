@@ -1,0 +1,38 @@
+#pragma kernel CSMain
+
+RWTexture2D<float4> Result;
+Texture2D<float4> height_tex;
+float maxval;
+
+
+float4 colorRamp(float intensity)
+{
+    float3 color;
+    if (intensity < 0.25)
+    {
+        color = lerp(float3(0, 0, 1), float3(0, 1, 1), intensity / 0.25); // Blue to Cyan
+    }
+    else if (intensity < 0.5)
+    {
+        color = lerp(float3(0, 1, 1), float3(0, 1, 0), (intensity - 0.25) / 0.25); // Cyan to Green
+    }
+    else if (intensity < 0.75)
+    {
+        color = lerp(float3(0, 1, 0), float3(1, 1, 0), (intensity - 0.5) / 0.25); // Green to Yellow
+    }
+    else
+    {
+        color = lerp(float3(1, 1, 0), float3(1, 0, 0), (intensity - 0.75) / 0.25); // Yellow to Red
+    }
+    return float4(color, 1.0);
+}
+
+[numthreads(16, 16, 1)]
+void CSMain(uint3 id : SV_DispatchThreadID)
+{
+    float intensity = height_tex[id.xy].r;
+    intensity = clamp(intensity / maxval, 0.0, 1.0);
+    
+    float4 color = colorRamp(intensity);
+    Result[id.xy] = float4(color.rgb, clamp(intensity, 0.15, 0.85));
+}
