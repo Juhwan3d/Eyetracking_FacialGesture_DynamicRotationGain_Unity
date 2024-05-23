@@ -18,19 +18,19 @@ void CSMain(uint3 id : SV_DispatchThreadID)
 
     // Apply color ramp based on intensity
     float4 color = float4(intensity, 0, 0, 1);
-    if (intensity < 0.25)
+    if (intensity < 0.25)  // blue to bluegreen
     {
         color = lerp(float4(0, 0, 1, 1), float4(0, 1, 1, 1), intensity * 4.0);
     }
-    else if (intensity < 0.5)
+    else if (intensity < 0.5)  // bluegreen to green
     {
         color = lerp(float4(0, 1, 1, 1), float4(0, 1, 0, 1), (intensity - 0.25) * 4.0);
     }
-    else if (intensity < 0.75)
+    else if (intensity < 0.75)  // green to yellow
     {
         color = lerp(float4(0, 1, 0, 1), float4(1, 1, 0, 1), (intensity - 0.5) * 4.0);
     }
-    else
+    else  // yellow to red
     {
         color = lerp(float4(1, 1, 0, 1), float4(1, 0, 0, 1), (intensity - 0.75) * 4.0);
     }

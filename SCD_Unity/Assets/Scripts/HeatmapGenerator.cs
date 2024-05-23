@@ -7,12 +7,13 @@ public class HeatmapGenerator : MonoBehaviour
     public ComputeShader maxIntensityShader;
     public ComputeShader heatmapColorizationShader;
     public Shader blendShader;
-    public int textureWidth = 512;
-    public int textureHeight = 512;
-    public float sigma = 10.0f;
+    public float sigma = 20.0f;
     public float overlayAlpha = 0.5f;
     public float decayRate = 0.99f; // weight 감소 비율
     public float pointLifetime = 2.0f; // weight가 유지되는 시간 (초)
+    
+    [HideInInspector] public int textureWidth;
+    [HideInInspector] public int textureHeight;
 
     private RenderTexture heatmapTexture;
     private RenderTexture finalHeatmapTexture;
@@ -22,6 +23,10 @@ public class HeatmapGenerator : MonoBehaviour
 
     void Start()
     {
+        textureWidth = Screen.width / 8;
+        textureHeight = Screen.height / 8;
+        Debug.Log("screen w, h: " + Screen.width + ", " + Screen.height + " texture w, h: " + textureWidth + ", " + textureHeight);
+
         heatmapTexture = CreateRenderTexture();
         finalHeatmapTexture = CreateRenderTexture();
 
