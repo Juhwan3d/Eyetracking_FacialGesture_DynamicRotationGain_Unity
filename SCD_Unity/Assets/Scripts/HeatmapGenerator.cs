@@ -16,7 +16,7 @@ public class HeatmapGenerator : MonoBehaviour
     [HideInInspector] public int textureHeight;
 
     private RenderTexture heatmapTexture;
-    private RenderTexture finalHeatmapTexture;
+    private RenderTexture heightHeatmapTexture;
     private Material blendMaterial;
     private List<HeatPoint> heatPoints = new List<HeatPoint>();
     private float elapsedTime = 0.0f;
@@ -28,7 +28,8 @@ public class HeatmapGenerator : MonoBehaviour
         Debug.Log("screen w, h: " + Screen.width + ", " + Screen.height + " texture w, h: " + textureWidth + ", " + textureHeight);
 
         heatmapTexture = CreateRenderTexture();
-        finalHeatmapTexture = CreateRenderTexture();
+        Debug.Log(heatmapTexture.width + ", " + heatmapTexture.height);
+        heightHeatmapTexture = CreateRenderTexture();
 
         blendMaterial = new Material(blendShader);
     }
@@ -59,15 +60,15 @@ public class HeatmapGenerator : MonoBehaviour
     {
         Vector2 mousePosition = Input.mousePosition;
         Vector2 normalizedPosition = new Vector2(mousePosition.x / Screen.width, mousePosition.y / Screen.height);
+        Debug.Log(normalizedPosition);
         return normalizedPosition;
     }
 
     void GenerateHeatmap()
     {
-        // 히트맵 텍스처를 초기화
-        RenderTexture.active = heatmapTexture;
+        Graphics.SetRenderTarget(heatmapTexture);
         GL.Clear(true, true, Color.clear);
-        RenderTexture.active = null;
+        Graphics.SetRenderTarget(null);
 
         foreach (var point in heatPoints)
         {
@@ -75,23 +76,20 @@ public class HeatmapGenerator : MonoBehaviour
             DispatchGaussianIntensityShader(point.position, weight);
         }
 
-        // Max Intensity Shader 디스패치
         maxIntensityShader.SetInt("tw", textureWidth);
         maxIntensityShader.SetInt("th", textureHeight);
         maxIntensityShader.SetTexture(0, "lum_tex", heatmapTexture);
-        maxIntensityShader.SetTexture(0, "Result", finalHeatmapTexture);
-        maxIntensityShader.Dispatch(0, textureWidth / 16, textureHeight / 16, 1);
+        maxIntensityShader.SetTexture(0, "Result", heightHeatmapTexture);
+        maxIntensityShader.Dispatch(0, textureWidth / 16 + 1, textureHeight / 16 + 1, 1);
 
-        // Max Intensity 값을 읽어오기
         float maxval = GetMaxIntensityValue();
 
-        // Heatmap Colorization Shader 디스패치
         heatmapColorizationShader.SetFloat("maxval", maxval);
         heatmapColorizationShader.SetInt("width", textureWidth);
         heatmapColorizationShader.SetInt("height", textureHeight);
-        heatmapColorizationShader.SetTexture(0, "height_tex", finalHeatmapTexture);
+        heatmapColorizationShader.SetTexture(0, "height_tex", heightHeatmapTexture);
         heatmapColorizationShader.SetTexture(0, "Result", heatmapTexture);
-        heatmapColorizationShader.Dispatch(0, textureWidth / 16, textureHeight / 16, 1);
+        heatmapColorizationShader.Dispatch(0, textureWidth / 16 + 1, textureHeight / 16 + 1, 1);
     }
 
     void DispatchGaussianIntensityShader(Vector2 position, float weight)
@@ -102,14 +100,14 @@ public class HeatmapGenerator : MonoBehaviour
         gaussianIntensityShader.SetFloat("weight", weight);
         gaussianIntensityShader.SetVector("center", position);
         gaussianIntensityShader.SetTexture(0, "Result", heatmapTexture);
-        gaussianIntensityShader.Dispatch(0, textureWidth / 16, textureHeight / 16, 1);
+        gaussianIntensityShader.Dispatch(0, textureWidth / 16 + 1, textureHeight / 16 + 1, 1);
     }
 
     float GetMaxIntensityValue()
     {
-        RenderTexture.active = finalHeatmapTexture;
-        Texture2D tempTexture = new Texture2D(finalHeatmapTexture.width, finalHeatmapTexture.height, TextureFormat.RGBAFloat, false);
-        tempTexture.ReadPixels(new Rect(0, 0, finalHeatmapTexture.width, finalHeatmapTexture.height), 0, 0);
+        RenderTexture.active = heightHeatmapTexture;
+        Texture2D tempTexture = new Texture2D(heightHeatmapTexture.width, heightHeatmapTexture.height, TextureFormat.RGBAFloat, false);
+        tempTexture.ReadPixels(new Rect(0, 0, heightHeatmapTexture.width, heightHeatmapTexture.height), 0, 0);
         tempTexture.Apply();
         RenderTexture.active = null;
 
@@ -130,6 +128,7 @@ public class HeatmapGenerator : MonoBehaviour
 
     void OnRenderImage(RenderTexture src, RenderTexture dest)
     {
+        // Graphics.Blit(heightHeatmapTexture, dest);
         // Set the textures and alpha to the blend material
         blendMaterial.SetTexture("_MainTex", src);
         blendMaterial.SetTexture("_OverlayTex", heatmapTexture);

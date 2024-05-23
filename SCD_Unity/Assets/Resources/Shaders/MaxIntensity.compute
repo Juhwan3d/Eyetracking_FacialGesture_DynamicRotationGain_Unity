@@ -4,6 +4,7 @@ int tw;
 int th;
 
 Texture2D<float4> lum_tex;
+SamplerState samplerState;
 RWTexture2D<float4> Result;
 
 [numthreads(16, 16, 1)]
@@ -12,18 +13,20 @@ void CSMain(uint3 id : SV_DispatchThreadID)
     if (id.x >= tw || id.y >= th)
         return;
 
-    float currentValue = lum_tex[id.xy].r;
+    float du = 1.0f / tw;
+    float dv = 1.0f / th;
 
-    // Fetch neighboring pixels
-    float2 uv = float2(id.x / float(tw), id.y / float(th));
+    float2 uv = 2.0f * float2(id.x / float(tw), id.y / float(th));
+
     float4 bl = lum_tex.Load(int3(uv + float2(0, 0), 0));
-    float4 br = lum_tex.Load(int3(uv + float2(1, 0), 0));
-    float4 ul = lum_tex.Load(int3(uv + float2(0, 1), 0));
-    float4 ur = lum_tex.Load(int3(uv + float2(1, 1), 0));
+    float4 br = lum_tex.Load(int3(uv + float2(du, 0), 0));
+    float4 ul = lum_tex.Load(int3(uv + float2(0, dv), 0));
+    float4 ur = lum_tex.Load(int3(uv + float2(du, dv), 0));
 
-    // Find max value among current and neighboring pixels
+    float currentValue = lum_tex[id.xy].r;
     float maxValue = max(max(bl.r, br.r), max(ul.r, ur.r));
     maxValue = max(maxValue, currentValue);
 
-    Result[id.xy] = float4(maxValue, 0, 0, 0);
+    Result[id.xy] = float4(maxValue, 0.0f, 0.0f, 0.0f);
 }
+

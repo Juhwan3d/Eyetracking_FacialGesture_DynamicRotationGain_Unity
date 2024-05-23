@@ -31,7 +31,6 @@ Shader "Custom/BlendShader"
 
             sampler2D _MainTex;
             sampler2D _OverlayTex;
-            float _DecayRate;
             float _OverlayAlpha;
 
             v2f vert(appdata_t v)
@@ -46,9 +45,6 @@ Shader "Custom/BlendShader"
             {
                 fixed4 baseColor = tex2D(_MainTex, i.texcoord);
                 fixed4 overlayColor = tex2D(_OverlayTex, i.texcoord);
-
-                            // Apply decay rate to the previous heatmap
-                overlayColor.rgb *= _DecayRate;
 
                             // Blend overlayColor with baseColor
                 overlayColor.a *= _OverlayAlpha;

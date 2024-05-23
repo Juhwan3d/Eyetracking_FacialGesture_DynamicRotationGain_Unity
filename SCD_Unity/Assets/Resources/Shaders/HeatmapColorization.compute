@@ -16,7 +16,6 @@ void CSMain(uint3 id : SV_DispatchThreadID)
     float intensity = height_tex[id.xy].r;
     intensity = clamp(intensity / maxval, 0.0, 1.0);
 
-    // Apply color ramp based on intensity
     float4 color = float4(intensity, 0, 0, 1);
     if (intensity < 0.25)  // blue to bluegreen
     {
@@ -37,3 +36,5 @@ void CSMain(uint3 id : SV_DispatchThreadID)
 
     Result[id.xy] = color;
 }
+
+

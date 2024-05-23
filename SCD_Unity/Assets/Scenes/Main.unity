@@ -879,12 +879,12 @@ MonoBehaviour:
   maxIntensityShader: {fileID: 7200000, guid: d8fd429f44e61ee409010d04ee61598a, type: 3}
   heatmapColorizationShader: {fileID: 7200000, guid: faa474067b7107341865cb31ee2d5ac6, type: 3}
   blendShader: {fileID: 4800000, guid: ff19c9fc5db724f45975aea74eccd178, type: 3}
+  sigma: 30
+  overlayAlpha: 0.5
+  decayRate: 0.99
+  pointLifetime: 2
   textureWidth: 0
   textureHeight: 0
-  sigma: 20
-  overlayAlpha: 0.5
-  decayRate: 0.95
-  pointLifetime: 2
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
