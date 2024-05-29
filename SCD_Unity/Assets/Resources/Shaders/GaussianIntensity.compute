@@ -15,10 +15,11 @@ void CSMain(uint3 id : SV_DispatchThreadID)
         return;
 
     float2 img_dim = float2(img_w, img_h);
-    float2 texCoord = float2(id.x, id.y) / img_dim;
+    float2 texCoord = id.xy / img_dim;
     float2 diff = texCoord - center;
     float distanceSquared = dot(diff * img_dim, diff * img_dim);
 
-    float intensity = weight * exp(-distanceSquared / (2.0 * sigma * sigma));
-    Result[id.xy] += float4(intensity, 0, 0, 0);
+    // Calculate intensity
+    float heat = weight * exp(distanceSquared / (-2.0 * sigma * sigma));
+    Result[id.xy] += float4(heat, 0, 0, 0);
 }

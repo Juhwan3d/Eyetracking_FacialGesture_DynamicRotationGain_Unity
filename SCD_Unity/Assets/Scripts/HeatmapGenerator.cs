@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using Tobii.GameIntegration.Net;
 
 public class HeatmapGenerator : MonoBehaviour
 {
@@ -7,7 +8,9 @@ public class HeatmapGenerator : MonoBehaviour
     public ComputeShader maxIntensityShader;
     public ComputeShader heatmapColorizationShader;
     public Shader blendShader;
-    public float sigma = 20.0f;
+    public enum HeatmapVisualizationMods { Color, HeightMap, None };
+    public HeatmapVisualizationMods visualizationMode = HeatmapVisualizationMods.Color;
+    public float sigma = 40.0f;
     public float overlayAlpha = 0.5f;
     public float decayRate = 0.99f; // weight 감소 비율
     public float pointLifetime = 2.0f; // weight가 유지되는 시간 (초)
@@ -21,14 +24,13 @@ public class HeatmapGenerator : MonoBehaviour
     private List<HeatPoint> heatPoints = new List<HeatPoint>();
     private float elapsedTime = 0.0f;
 
+
     void Start()
     {
         textureWidth = Screen.width / 8;
         textureHeight = Screen.height / 8;
-        Debug.Log("screen w, h: " + Screen.width + ", " + Screen.height + " texture w, h: " + textureWidth + ", " + textureHeight);
 
         heatmapTexture = CreateRenderTexture();
-        Debug.Log(heatmapTexture.width + ", " + heatmapTexture.height);
         heightHeatmapTexture = CreateRenderTexture();
 
         blendMaterial = new Material(blendShader);
@@ -37,6 +39,7 @@ public class HeatmapGenerator : MonoBehaviour
     void Update()
     {
         elapsedTime += Time.deltaTime;
+        Debug.Log(TobiiGameIntegrationApi.IsTrackerConnected());
 
         // 마우스 위치를 기록
         Vector2 normalizedMousePos = GetMousePositionNormalized();
@@ -44,6 +47,14 @@ public class HeatmapGenerator : MonoBehaviour
 
         // 오래된 포인트 제거
         heatPoints.RemoveAll(point => elapsedTime - point.timestamp > pointLifetime);
+
+        if (Input.GetKeyDown(KeyCode.V))
+        {
+            if (visualizationMode == HeatmapVisualizationMods.None)
+                visualizationMode = HeatmapVisualizationMods.Color;
+            else
+                visualizationMode += 1;
+        }
 
         GenerateHeatmap();
     }
@@ -60,7 +71,6 @@ public class HeatmapGenerator : MonoBehaviour
     {
         Vector2 mousePosition = Input.mousePosition;
         Vector2 normalizedPosition = new Vector2(mousePosition.x / Screen.width, mousePosition.y / Screen.height);
-        Debug.Log(normalizedPosition);
         return normalizedPosition;
     }
 
@@ -128,20 +138,27 @@ public class HeatmapGenerator : MonoBehaviour
 
     void OnRenderImage(RenderTexture src, RenderTexture dest)
     {
-        // Graphics.Blit(heightHeatmapTexture, dest);
-        // Set the textures and alpha to the blend material
-        blendMaterial.SetTexture("_MainTex", src);
-        blendMaterial.SetTexture("_OverlayTex", heatmapTexture);
-        blendMaterial.SetFloat("_OverlayAlpha", overlayAlpha);
-
-        // Use Graphics.Blit to blend the original scene with the heatmap
-        Graphics.Blit(src, dest, blendMaterial);
+        if (visualizationMode == HeatmapVisualizationMods.Color)
+        {
+            blendMaterial.SetTexture("_MainTex", src);
+            blendMaterial.SetTexture("_OverlayTex", heatmapTexture);
+            blendMaterial.SetFloat("_OverlayAlpha", overlayAlpha);
+            Graphics.Blit(src, dest, blendMaterial);
+        }
+        else if (visualizationMode == HeatmapVisualizationMods.HeightMap)
+        {
+            Graphics.Blit(heightHeatmapTexture, dest);
+        }
+        else
+        {
+            Graphics.Blit(src, dest);
+        }
     }
 
     public float GetCenterHeatmapValue()
     {
         // Read the center pixel value from the heatmap texture
-        RenderTexture.active = heatmapTexture;
+        RenderTexture.active = heightHeatmapTexture;
         Texture2D tempTexture = new Texture2D(textureWidth, textureHeight, TextureFormat.RGBAFloat, false);
         tempTexture.ReadPixels(new Rect(0, 0, textureWidth, textureHeight), 0, 0);
         tempTexture.Apply();
@@ -151,7 +168,6 @@ public class HeatmapGenerator : MonoBehaviour
         return centerPixel.r; // Assuming the heatmap value is stored in the red channel
     }
 
-    // HeatPoint 구조체 정의
     struct HeatPoint
     {
         public Vector2 position;

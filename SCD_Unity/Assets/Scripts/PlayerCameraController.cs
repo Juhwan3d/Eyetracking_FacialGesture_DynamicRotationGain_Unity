@@ -3,31 +3,41 @@ using UnityEngine;
 public class PlayerCameraController : MonoBehaviour
 {
     public UDPReceiver UDPReceiver;
-    public float rotationSpeedFactor = 10f;
     public float rotationGain = 3f;
     public bool usePitch = true;
-    public bool LerpRotate = true;
+    public HeatmapGenerator heatmapGenerator;
 
     private float pitch;
     private float yaw;
     private float roll;
     private bool clutch = false;
+    private float rotationGain_initValue;
+    private float centerHeatmapValue;
 
     [SerializeField] private Quaternion targetRotation;
     [SerializeField] private Vector3 targetRotationVec;
     [SerializeField] private float forward = 0f;
     [SerializeField] private Quaternion smoothedRotation;
 
+    private void Start()
+    {
+        rotationGain_initValue = rotationGain;
+    }
+
     // Update is called once per frame
     void Update()
     {
         if (UDPReceiver == null) return;
         clutch = UDPReceiver.clutch;
-        // clutch가 true이면 현재 yaw 로테이션을 forwardRotation으로 지정
+
+        rotationGain = rotationGain_initValue;
+        centerHeatmapValue = heatmapGenerator.GetCenterHeatmapValue();
+        // Debug.Log(centerHeatmapValue);
+
         if (clutch)
         {
             forward = transform.localRotation.eulerAngles.y;
-            return; // clutch가 true일 때는 회전을 진행하지 않음
+            rotationGain = 0;
         }
 
         pitch = UDPReceiver.pitch;
@@ -40,20 +50,7 @@ public class PlayerCameraController : MonoBehaviour
         targetRotationVec = new Vector3(pitch, yaw * rotationGain + forward, 0);
         targetRotation = Quaternion.Euler(targetRotationVec);
 
-        if (LerpRotate)
-        {
-            smoothedRotation = Quaternion.Lerp(smoothedRotation, targetRotation, Time.deltaTime * rotationSpeedFactor);
-            transform.localRotation = smoothedRotation;
-        }
-        else
-        {
-            transform.localRotation = targetRotation;
-        }
-/*        else
-        {
-            smoothedRotation = Quaternion.RotateTowards(smoothedRotation, targetRotation, Time.deltaTime * rotationSpeedFactor);
-            transform.localRotation = smoothedRotation;
-        }*/
+        transform.localRotation = targetRotation;
     }
 
     // 시각적으로 smoothedRotation을 표시하는 함수
