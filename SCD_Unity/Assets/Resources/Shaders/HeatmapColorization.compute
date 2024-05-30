@@ -33,8 +33,5 @@ void CSMain(uint3 id : SV_DispatchThreadID)
     {
         color = lerp(float4(1, 1, 0, 1), float4(1, 0, 0, 1), (intensity - 0.75) * 4.0);
     }
-
     Result[id.xy] = color;
 }
-
-

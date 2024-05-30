@@ -11,6 +11,7 @@ public class UIController : MonoBehaviour
     public TextMeshProUGUI rotateLabel;
     public TextMeshProUGUI currentRotationGain;
     public TextMeshProUGUI gazePositions;
+    public TextMeshProUGUI centerHeat;
 
     private float pitch, yaw, roll;
     private bool clutch;
@@ -33,5 +34,6 @@ public class UIController : MonoBehaviour
         rotateLabel.text = string.Format("Pitch: {0:N2}, Yaw: {1:N2}, Roll: {2:N2}, Clutch: {3}",pitch,yaw,roll,clutch);
         currentRotationGain.text = string.Format("Current Rotation Gain: {0:N2}", PlayerCameraController.rotationGain);
         gazePositions.text = string.Format("Current Gaze Position: {0}", HeatmapGenerator.gazePosVec);
+        centerHeat.text = string.Format("Current Heat Value: {0}", PlayerCameraController.centerHeatmapValue);
     }
 }

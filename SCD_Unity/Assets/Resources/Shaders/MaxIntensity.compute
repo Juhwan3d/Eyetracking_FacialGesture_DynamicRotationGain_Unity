@@ -17,7 +17,7 @@ void CSMain(uint3 id : SV_DispatchThreadID)
     float dv = 1.0f / th;
     float2 img_dim = float2(tw, th);
     
-    float2 uv = float2(2.0f * (id.xy / img_dim));
+    float2 uv = id.xy;
 
     float4 bl = lum_tex.Load(int3(uv + float2(0, 0), 0));
     float4 br = lum_tex.Load(int3(uv + float2(0, dv), 0));

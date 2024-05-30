@@ -4,15 +4,16 @@ public class PlayerCameraController : MonoBehaviour
 {
     public UDPReceiver UDPReceiver;
     public float rotationGain = 3f;
+    public float maxRotationGain = 6f;
     public bool usePitch = true;
     public HeatmapGenerator heatmapGenerator;
+    public float centerHeatmapValue;
 
     private float pitch;
     private float yaw;
     private float roll;
     private bool clutch = false;
-    private float rotationGain_initValue;
-    private float centerHeatmapValue;
+    private float minRotationGain;
 
     [SerializeField] private Quaternion targetRotation;
     [SerializeField] private Vector3 targetRotationVec;
@@ -21,7 +22,7 @@ public class PlayerCameraController : MonoBehaviour
 
     private void Start()
     {
-        rotationGain_initValue = rotationGain;
+        minRotationGain = rotationGain;
     }
 
     // Update is called once per frame
@@ -30,9 +31,14 @@ public class PlayerCameraController : MonoBehaviour
         if (UDPReceiver == null) return;
         clutch = UDPReceiver.clutch;
 
-        rotationGain = rotationGain_initValue;
-        centerHeatmapValue = heatmapGenerator.GetCenterHeatmapValue();
-        // Debug.Log(centerHeatmapValue);
+        rotationGain = minRotationGain;
+        centerHeatmapValue = heatmapGenerator.GetHeatmapValue(heatmapGenerator.textureWidth/2, heatmapGenerator.textureHeight/2);
+        float gainFactor = Mathf.Clamp(centerHeatmapValue / heatmapGenerator.maxval * (maxRotationGain-rotationGain), 0, maxRotationGain-rotationGain);
+        Debug.Log("before clamp: " + (centerHeatmapValue/heatmapGenerator.maxval));
+        Debug.Log("gainFactor: " + gainFactor);
+        rotationGain = (maxRotationGain - gainFactor);
+
+        Debug.Log("Center Heatmap Value: " + centerHeatmapValue);
 
         if (clutch)
         {
@@ -51,31 +57,5 @@ public class PlayerCameraController : MonoBehaviour
         targetRotation = Quaternion.Euler(targetRotationVec);
 
         transform.localRotation = targetRotation;
-    }
-
-    // 시각적으로 smoothedRotation을 표시하는 함수
-    private void OnDrawGizmos()
-    {
-        Gizmos.color = Color.blue;
-        Gizmos.DrawLine(transform.position, transform.position + transform.forward * 2f);
-        Gizmos.color = Color.green;
-        Gizmos.DrawLine(transform.position, transform.position + transform.up * 2f);
-        Gizmos.color = Color.red;
-        Gizmos.DrawLine(transform.position, transform.position + transform.right * 2f);
-
-        // smoothedRotation 시각적으로 표시
-        DrawQuaternion(transform.position, smoothedRotation.normalized, 1f);
-    }
-
-    // Quaternion을 시각적으로 표시하는 함수
-    void DrawQuaternion(Vector3 position, Quaternion rotation, float size)
-    {
-        // Quaternion을 행렬로 변환
-        Matrix4x4 matrix = Matrix4x4.TRS(position, rotation, Vector3.one);
-
-        // Quaternion을 시각적으로 표시
-        Gizmos.matrix = matrix;
-        Gizmos.color = Color.red;
-        Gizmos.DrawWireCube(Vector3.zero, new Vector3(size, size, size));
     }
 }

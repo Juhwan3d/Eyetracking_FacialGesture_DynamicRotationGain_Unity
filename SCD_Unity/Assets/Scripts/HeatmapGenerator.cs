@@ -21,6 +21,7 @@ public class HeatmapGenerator : MonoBehaviour
     
     [HideInInspector] public int textureWidth;
     [HideInInspector] public int textureHeight;
+    [HideInInspector] public float maxval;
 
     private RenderTexture heatmapTexture;
     private RenderTexture heightHeatmapTexture;
@@ -29,6 +30,8 @@ public class HeatmapGenerator : MonoBehaviour
     private float elapsedTime = 0.0f;
 
     public Vector2 gazePosVec;
+
+    private TrackerInfo trackerInfo;
     private GazePoint gazePoint;
     private TobiiRectangle tobiiRectangle;
 
@@ -36,6 +39,7 @@ public class HeatmapGenerator : MonoBehaviour
     {
         textureWidth = Screen.width / 8;
         textureHeight = Screen.height / 8;
+        Debug.Log(string.Format("Screen Width: {0}, Height: {1}", Screen.width, Screen.height));
 
         heatmapTexture = CreateRenderTexture();
         heightHeatmapTexture = CreateRenderTexture();
@@ -44,10 +48,12 @@ public class HeatmapGenerator : MonoBehaviour
 
         // Set Eye tracker
         bool isTobiiInit = TobiiGameIntegrationApi.IsApiInitialized();
+        
         TobiiGameIntegrationApi.SetApplicationName("SCD_Unity");
         TobiiGameIntegrationApi.TrackTracker(trackerUrl);
         TobiiGameIntegrationApi.PrelinkAll();
-
+        
+        //trackerInfo = TobiiGameIntegrationApi.GetTrackerInfo(trackerUrl);
         //Rect gameView = GetGameViewRect();
         //tobiiRectangle.Right = (int)gameView.xMax;
         //tobiiRectangle.Bottom = (int)gameView.yMax;
@@ -65,23 +71,23 @@ public class HeatmapGenerator : MonoBehaviour
         Debug.Log("Tracker Enabled: " + TobiiGameIntegrationApi.IsTrackerEnabled());
     }
 
-    //public static Rect GetGameViewRect()
-    //{
-    //    // Get the game view window using reflection
-    //    System.Type T = System.Type.GetType("UnityEditor.GameView,UnityEditor");
-    //    EditorWindow gameView = EditorWindow.GetWindow(T);
+    public static Rect GetGameViewRect()
+    {
+        // Get the game view window using reflection
+        System.Type T = System.Type.GetType("UnityEditor.GameView,UnityEditor");
+        EditorWindow gameView = EditorWindow.GetWindow(T);
 
-    //    // Get the position and size of the game view
-    //    Rect gameViewRect = gameView.position;
+        // Get the position and size of the game view
+        Rect gameViewRect = gameView.position;
 
-    //    // Get the size of the viewport within the game view window
-    //    System.Type sizeType = System.Type.GetType("UnityEditor.GameView,UnityEditor");
-    //    MethodInfo getSizeOfMainGameView = sizeType.GetMethod("GetSizeOfMainGameView", BindingFlags.NonPublic | BindingFlags.Static);
-    //    Vector2 gameViewSize = (Vector2)getSizeOfMainGameView.Invoke(null, null);
-        
-    //    gameViewRect.size = gameViewSize;
-    //    return gameViewRect;
-    //}
+        // Get the size of the viewport within the game view window
+        System.Type sizeType = System.Type.GetType("UnityEditor.GameView,UnityEditor");
+        MethodInfo getSizeOfMainGameView = sizeType.GetMethod("GetSizeOfMainGameView", BindingFlags.NonPublic | BindingFlags.Static);
+        Vector2 gameViewSize = (Vector2)getSizeOfMainGameView.Invoke(null, null);
+
+        gameViewRect.size = gameViewSize;
+        return gameViewRect;
+    }
 
     void Update()
     {
@@ -100,14 +106,17 @@ public class HeatmapGenerator : MonoBehaviour
             else
                 visualizationMode += 1;
         }
-
         GenerateHeatmap();
     }
 
     Vector2 GetGazePisition()
     {
+        //Vector2 mousePosition = Input.mousePosition;
+        //Vector2 normalizedPosition = new(mousePosition.x / Screen.width, mousePosition.y / Screen.height);
+        //return normalizedPosition;
+
         TobiiGameIntegrationApi.TryGetLatestGazePoint(out gazePoint);
-        gazePosVec = new(gazePoint.X+1, gazePoint.Y+1);
+        gazePosVec = new(gazePoint.X + 1, gazePoint.Y + 1);
         gazePosVec /= 2.0f;
         return gazePosVec;
     }
@@ -138,8 +147,8 @@ public class HeatmapGenerator : MonoBehaviour
         maxIntensityShader.SetTexture(0, "Result", heightHeatmapTexture);
         maxIntensityShader.Dispatch(0, textureWidth / 16 + 1, textureHeight / 16 + 1, 1);
 
-        float maxval = GetMaxIntensityValue();
-
+        maxval = GetMaxIntensityValue();
+        Debug.Log("maxval: " + maxval);
         heatmapColorizationShader.SetFloat("maxval", maxval);
         heatmapColorizationShader.SetInt("width", textureWidth);
         heatmapColorizationShader.SetInt("height", textureHeight);
@@ -201,7 +210,7 @@ public class HeatmapGenerator : MonoBehaviour
         }
     }
 
-    public float GetCenterHeatmapValue()
+    public float GetHeatmapValue(int x, int y)
     {
         RenderTexture.active = heightHeatmapTexture;
         Texture2D tempTexture = new Texture2D(textureWidth, textureHeight, TextureFormat.RGBAFloat, false);
@@ -209,7 +218,7 @@ public class HeatmapGenerator : MonoBehaviour
         tempTexture.Apply();
         RenderTexture.active = null;
 
-        Color centerPixel = tempTexture.GetPixel(textureWidth / 2, textureHeight / 2);
+        Color centerPixel = tempTexture.GetPixel(x, y);
         return centerPixel.r;
     }
 
