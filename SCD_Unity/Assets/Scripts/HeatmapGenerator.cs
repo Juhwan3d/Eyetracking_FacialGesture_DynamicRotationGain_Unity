@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using UnityEngine;
 using Tobii.GameIntegration.Net;
+using System.Reflection;
+using UnityEditor;
 
 public class HeatmapGenerator : MonoBehaviour
 {
@@ -12,8 +14,10 @@ public class HeatmapGenerator : MonoBehaviour
     public HeatmapVisualizationMods visualizationMode = HeatmapVisualizationMods.Color;
     public float sigma = 40.0f;
     public float overlayAlpha = 0.5f;
-    public float decayRate = 0.99f; // weight 감소 비율
-    public float pointLifetime = 2.0f; // weight가 유지되는 시간 (초)
+    public float decayRate = 0.99f;
+    public float pointLifetime = 1.0f;
+
+    public string trackerUrl = "tobii-prp://IS5FF-100203157272";
     
     [HideInInspector] public int textureWidth;
     [HideInInspector] public int textureHeight;
@@ -21,9 +25,12 @@ public class HeatmapGenerator : MonoBehaviour
     private RenderTexture heatmapTexture;
     private RenderTexture heightHeatmapTexture;
     private Material blendMaterial;
-    private List<HeatPoint> heatPoints = new List<HeatPoint>();
+    private List<HeatPoint> heatPoints = new();
     private float elapsedTime = 0.0f;
 
+    public Vector2 gazePosVec;
+    private GazePoint gazePoint;
+    private TobiiRectangle tobiiRectangle;
 
     void Start()
     {
@@ -34,18 +41,56 @@ public class HeatmapGenerator : MonoBehaviour
         heightHeatmapTexture = CreateRenderTexture();
 
         blendMaterial = new Material(blendShader);
+
+        // Set Eye tracker
+        bool isTobiiInit = TobiiGameIntegrationApi.IsApiInitialized();
+        TobiiGameIntegrationApi.SetApplicationName("SCD_Unity");
+        TobiiGameIntegrationApi.TrackTracker(trackerUrl);
+        TobiiGameIntegrationApi.PrelinkAll();
+
+        //Rect gameView = GetGameViewRect();
+        //tobiiRectangle.Right = (int)gameView.xMax;
+        //tobiiRectangle.Bottom = (int)gameView.yMax;
+        //tobiiRectangle.Left = (int)gameView.xMin;
+        //tobiiRectangle.Top = (int)gameView.yMin;
+        //TobiiGameIntegrationApi.TrackRectangle(tobiiRectangle);
+        //Debug.Log(string.Format("TobiiRectangle Right: {0}, Bottom: {1}, Left: {2}, Top: {3}",
+        //    tobiiRectangle.Right,
+        //    tobiiRectangle.Bottom,
+        //    tobiiRectangle.Left,
+        //    tobiiRectangle.Top));
+
+        Debug.Log("Init API: " + isTobiiInit);
+        Debug.Log("Tracker Connected: " + TobiiGameIntegrationApi.IsTrackerConnected());
+        Debug.Log("Tracker Enabled: " + TobiiGameIntegrationApi.IsTrackerEnabled());
     }
+
+    //public static Rect GetGameViewRect()
+    //{
+    //    // Get the game view window using reflection
+    //    System.Type T = System.Type.GetType("UnityEditor.GameView,UnityEditor");
+    //    EditorWindow gameView = EditorWindow.GetWindow(T);
+
+    //    // Get the position and size of the game view
+    //    Rect gameViewRect = gameView.position;
+
+    //    // Get the size of the viewport within the game view window
+    //    System.Type sizeType = System.Type.GetType("UnityEditor.GameView,UnityEditor");
+    //    MethodInfo getSizeOfMainGameView = sizeType.GetMethod("GetSizeOfMainGameView", BindingFlags.NonPublic | BindingFlags.Static);
+    //    Vector2 gameViewSize = (Vector2)getSizeOfMainGameView.Invoke(null, null);
+        
+    //    gameViewRect.size = gameViewSize;
+    //    return gameViewRect;
+    //}
 
     void Update()
     {
+        TobiiGameIntegrationApi.Update();
+        TobiiGameIntegrationApi.UpdateTrackerInfos();
+
+        Vector2 gazePos = GetGazePisition();
         elapsedTime += Time.deltaTime;
-        Debug.Log(TobiiGameIntegrationApi.IsTrackerConnected());
-
-        // 마우스 위치를 기록
-        Vector2 normalizedMousePos = GetMousePositionNormalized();
-        heatPoints.Add(new HeatPoint(normalizedMousePos, elapsedTime));
-
-        // 오래된 포인트 제거
+        heatPoints.Add(new HeatPoint(gazePos, elapsedTime));
         heatPoints.RemoveAll(point => elapsedTime - point.timestamp > pointLifetime);
 
         if (Input.GetKeyDown(KeyCode.V))
@@ -59,19 +104,20 @@ public class HeatmapGenerator : MonoBehaviour
         GenerateHeatmap();
     }
 
+    Vector2 GetGazePisition()
+    {
+        TobiiGameIntegrationApi.TryGetLatestGazePoint(out gazePoint);
+        gazePosVec = new(gazePoint.X+1, gazePoint.Y+1);
+        gazePosVec /= 2.0f;
+        return gazePosVec;
+    }
+
     RenderTexture CreateRenderTexture()
     {
         RenderTexture rt = new RenderTexture(textureWidth, textureHeight, 0, RenderTextureFormat.ARGBFloat);
         rt.enableRandomWrite = true;
         rt.Create();
         return rt;
-    }
-
-    Vector2 GetMousePositionNormalized()
-    {
-        Vector2 mousePosition = Input.mousePosition;
-        Vector2 normalizedPosition = new Vector2(mousePosition.x / Screen.width, mousePosition.y / Screen.height);
-        return normalizedPosition;
     }
 
     void GenerateHeatmap()
@@ -157,7 +203,6 @@ public class HeatmapGenerator : MonoBehaviour
 
     public float GetCenterHeatmapValue()
     {
-        // Read the center pixel value from the heatmap texture
         RenderTexture.active = heightHeatmapTexture;
         Texture2D tempTexture = new Texture2D(textureWidth, textureHeight, TextureFormat.RGBAFloat, false);
         tempTexture.ReadPixels(new Rect(0, 0, textureWidth, textureHeight), 0, 0);
@@ -165,7 +210,7 @@ public class HeatmapGenerator : MonoBehaviour
         RenderTexture.active = null;
 
         Color centerPixel = tempTexture.GetPixel(textureWidth / 2, textureHeight / 2);
-        return centerPixel.r; // Assuming the heatmap value is stored in the red channel
+        return centerPixel.r;
     }
 
     struct HeatPoint

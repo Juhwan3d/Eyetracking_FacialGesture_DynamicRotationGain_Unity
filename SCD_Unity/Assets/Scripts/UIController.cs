@@ -6,9 +6,11 @@ public class UIController : MonoBehaviour
 {
     public UDPReceiver UDPReceiver;
     public PlayerCameraController PlayerCameraController;
+    public HeatmapGenerator HeatmapGenerator;
     public TextMeshProUGUI clutchText;
     public TextMeshProUGUI rotateLabel;
     public TextMeshProUGUI currentRotationGain;
+    public TextMeshProUGUI gazePositions;
 
     private float pitch, yaw, roll;
     private bool clutch;
@@ -30,6 +32,6 @@ public class UIController : MonoBehaviour
         clutchText.gameObject.SetActive(clutch);
         rotateLabel.text = string.Format("Pitch: {0:N2}, Yaw: {1:N2}, Roll: {2:N2}, Clutch: {3}",pitch,yaw,roll,clutch);
         currentRotationGain.text = string.Format("Current Rotation Gain: {0:N2}", PlayerCameraController.rotationGain);
+        gazePositions.text = string.Format("Current Gaze Position: {0}", HeatmapGenerator.gazePosVec);
     }
-
 }
