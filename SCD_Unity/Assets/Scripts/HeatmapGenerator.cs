@@ -13,7 +13,7 @@ public class HeatmapGenerator : MonoBehaviour
     public enum HeatmapVisualizationMods { Color, HeightMap, None };
     public HeatmapVisualizationMods visualizationMode = HeatmapVisualizationMods.Color;
     public float sigma = 40.0f;
-    public float overlayAlpha = 0.5f;
+    public float overlayAlpha = 1f;
     public float decayRate = 0.99f;
     public float pointLifetime = 1.0f;
 
@@ -23,16 +23,16 @@ public class HeatmapGenerator : MonoBehaviour
     [HideInInspector] public int textureHeight;
     [HideInInspector] public float maxval;
 
+    public List<HeatPoint> heatPoints = new();
     private RenderTexture heatmapTexture;
     private RenderTexture heightHeatmapTexture;
     private Material blendMaterial;
-    private List<HeatPoint> heatPoints = new();
     private float elapsedTime = 0.0f;
 
-    public Vector2 gazePosVec;
+    public Vector2 gazePos;
+    public GazePoint gazePoint;
 
     private TrackerInfo trackerInfo;
-    private GazePoint gazePoint;
     private TobiiRectangle tobiiRectangle;
 
     void Start()
@@ -111,20 +111,22 @@ public class HeatmapGenerator : MonoBehaviour
 
     Vector2 GetGazePisition()
     {
-        //Vector2 mousePosition = Input.mousePosition;
-        //Vector2 normalizedPosition = new(mousePosition.x / Screen.width, mousePosition.y / Screen.height);
-        //return normalizedPosition;
+        Vector2 mousePosition = Input.mousePosition;
+        Vector2 normalizedPosition = new(mousePosition.x / Screen.width, mousePosition.y / Screen.height);
+        return normalizedPosition;
 
         TobiiGameIntegrationApi.TryGetLatestGazePoint(out gazePoint);
-        gazePosVec = new(gazePoint.X + 1, gazePoint.Y + 1);
-        gazePosVec /= 2.0f;
-        return gazePosVec;
+        gazePos = new(gazePoint.X + 1, gazePoint.Y + 1);
+        gazePos /= 2.0f;
+        return gazePos;
     }
 
     RenderTexture CreateRenderTexture()
     {
-        RenderTexture rt = new RenderTexture(textureWidth, textureHeight, 0, RenderTextureFormat.ARGBFloat);
-        rt.enableRandomWrite = true;
+        RenderTexture rt = new(textureWidth, textureHeight, 0, RenderTextureFormat.ARGBFloat)
+        {
+            enableRandomWrite = true
+        };
         rt.Create();
         return rt;
     }
@@ -148,7 +150,6 @@ public class HeatmapGenerator : MonoBehaviour
         maxIntensityShader.Dispatch(0, textureWidth / 16 + 1, textureHeight / 16 + 1, 1);
 
         maxval = GetMaxIntensityValue();
-        Debug.Log("maxval: " + maxval);
         heatmapColorizationShader.SetFloat("maxval", maxval);
         heatmapColorizationShader.SetInt("width", textureWidth);
         heatmapColorizationShader.SetInt("height", textureHeight);
@@ -210,7 +211,7 @@ public class HeatmapGenerator : MonoBehaviour
         }
     }
 
-    public float GetHeatmapValue(int x, int y)
+    public float GetHeatmapValueClamped(int x, int y)
     {
         RenderTexture.active = heightHeatmapTexture;
         Texture2D tempTexture = new Texture2D(textureWidth, textureHeight, TextureFormat.RGBAFloat, false);
@@ -219,10 +220,10 @@ public class HeatmapGenerator : MonoBehaviour
         RenderTexture.active = null;
 
         Color centerPixel = tempTexture.GetPixel(x, y);
-        return centerPixel.r;
+        return Mathf.Clamp(centerPixel.r / maxval, 0.0f, 1.0f);
     }
 
-    struct HeatPoint
+    public struct HeatPoint
     {
         public Vector2 position;
         public float timestamp;
